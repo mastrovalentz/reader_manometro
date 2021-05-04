@@ -6,10 +6,7 @@ from matplotlib import pyplot
 from PIL import Image
 import os
 
-#load image
-im = Image.open("images/manometro_2.jpg")
-plt.imshow(im)
-plt.show()
+
 
 #cricle cropping function
 def crop_circle_jpg(m, cx, cy, r):
@@ -23,15 +20,14 @@ def crop_circle_jpg(m, cx, cy, r):
     return m_crop
 
 #read left sensor
-def read_left(image, plot=False):
+def read_left(image, plot=False, save=None):
     #crop circle image
-    im_left  = crop_circle_jpg(np.asarray(image), 270,270,150)
-    #remove blocks(min and central square)
-    im_left[120:200,70:240]=[255,255,255]
-    im_left[250:,:]=[255,255,255]
+    im_left  = crop_circle_jpg(np.asarray(image), 170,170,130)
+    im_left[100:150,70:200]=[255,255,255]
+    im_left[190:250,60:200]=[255,255,255]
     
     #set "white" threshold
-    trsh = 180
+    trsh = 120
     im_left_coords = np.where(np.mean(im_left,axis=2)<trsh)
     im_left_coords =np.array(im_left_coords)
         
@@ -62,21 +58,22 @@ def read_left(image, plot=False):
         
         plt.imshow(im_left)
         plt.plot(y_pred,im_left_rej[0],  c='red')
+        if save is not None:
+            plt.savefig(save)
         plt.show()
     return theta
 
 
 #read right sensor
-def read_right(image, plot=False):
+def read_right(image, plot=False, save=None):
     #crop circle image
-    im_rigth = crop_circle_jpg(np.asarray(image), 260,910,200)
-    #remove blocks(min and central square)
-    im_rigth[180:250,100:280]=[255,255,255]
-    im_rigth[110:140,45:120]=[255,255,255]
-    im_rigth[105:140,245:350]=[255,255,255]
+    im_rigth = crop_circle_jpg(np.asarray(image), 173,560,120)
+    im_rigth[95:140,60:185]=[255,255,255]
+    im_rigth[50:80,30:100]=[255,255,255]
+    im_rigth[50:80,140:240]=[255,255,255]
     
     #set "white" threshold
-    trsh = 180
+    trsh = 120
     im_right_coords = np.where(np.mean(im_rigth,axis=2)<trsh)
     im_right_coords =np.array(im_right_coords)
         
@@ -107,9 +104,38 @@ def read_right(image, plot=False):
         
         plt.imshow(im_rigth)
         plt.plot(y_pred,im_right_rej[0],  c='red')
+        if save is not None:
+            plt.savefig(save)
         plt.show()
     return theta
 
-print("Left angle:", read_left(im, plot=True))
-print("Right angle:", read_right(im, plot=True))
 
+#load image
+#im = Image.open("images/manometro_2.jpg")
+#plt.imshow(im)
+#plt.show()
+#
+#
+#
+#print("Left angle:",  read_left(im, plot=True))
+#print("Right angle:", read_right(im, plot=True))
+
+if __name__ == '__main__':
+    imPath  = "cropped_images"
+    outPath = "read_images"
+    imFiles = os.listdir(imPath) 
+
+    left_angles  = []
+    right_angles = []
+    for fname in imFiles:
+        im = Image.open(os.path.join(imPath, fname))
+        left_angles .append(read_left (im, plot=True, save=os.path.join(outPath, "left" +fname)))
+        right_angles.append(read_right(im, plot=True, save=os.path.join(outPath, "right"+fname)))
+
+    fig, axs = plt.subplots(1, 2)
+    axs[0].hist(left_angles)
+    axs[0].set_title("Left measurement")
+    axs[1].hist(right_angles)
+    axs[1].set_title("Right measurement")
+    fig.show()
+    
